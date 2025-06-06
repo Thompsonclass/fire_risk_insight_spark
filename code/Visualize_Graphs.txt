@@ -1,0 +1,213 @@
+#------------------------연도별 월별 화재 추이
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#데이터 준비
+monthly = df.groupBy("연도", "월").count().toPandas().sort_values(by=["연도", "월"])
+
+#그래프 생성
+for y in monthly["연도"].unique():
+    subset = monthly[monthly["연도"] == y]
+    plt.plot(subset["월"], subset["count"], label=str(y))
+
+#1~12월을 명시적으로 지정
+plt.xticks(ticks=range(1, 13), labels=[str(i) for i in range(1, 13)], fontproperties=font_prop)
+
+plt.xlabel("월", fontproperties=font_prop)
+plt.ylabel("화재 건수", fontproperties=font_prop)
+plt.title("연도별 월별 화재 추이", fontproperties=font_prop)
+plt.legend(prop=font_prop)
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+#------------------------시도별 월별 화재 발생 히트맵
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import seaborn as sns
+import pandas as pd
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#데이터 준비
+heatmap_df = df.groupBy("시도", "월").count().toPandas().pivot(index="시도", columns="월", values="count")
+
+# 히트맵 생성
+plt.figure(figsize=(12, 8))
+ax = sns.heatmap(heatmap_df, annot=True, fmt="d", cmap="Reds")
+
+#제목, 축 레이블
+plt.title("시도별 월별 화재 발생 히트맵", fontproperties=font_prop)
+plt.xlabel("월", fontproperties=font_prop)
+plt.ylabel("시도", fontproperties=font_prop)
+
+#폰트 적용
+ax.set_yticklabels(ax.get_yticklabels(), fontproperties=font_prop)
+ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop)
+
+plt.tight_layout()
+plt.show()
+
+#------------------------3월 화재 유형 top5
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#3월 데이터 필터링 및 집계
+march_df = df.filter(df["월"] == 3)
+fire_type = march_df.groupBy("화재유형").count().orderBy("count", ascending=False).limit(5).toPandas()
+
+#막대그래프 그리기
+ax = fire_type.plot(kind="bar", x="화재유형", y="count", legend=False)
+
+#폰트 적용
+plt.title("3월 화재 유형 Top 5", fontproperties=font_prop)
+plt.xlabel("화재유형", fontproperties=font_prop)
+plt.ylabel("건수", fontproperties=font_prop)
+
+#x축 눈금 폰트도 직접 지정
+ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop, rotation=0)
+
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+#------------------------3월 발화열월 top5
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#3월 데이터 필터링 및 집계
+march_df = df.filter(df["월"] == 3)
+fire_type = march_df.groupBy("발화열원").count().orderBy("count", ascending=False).limit(5).toPandas()
+
+#막대그래프 그리기
+ax = fire_type.plot(kind="bar", x="발화열원", y="count", legend=False)
+
+#폰트 적용
+plt.title("3월 발화열원 Top 5", fontproperties=font_prop)
+plt.xlabel("발화열원", fontproperties=font_prop)
+plt.ylabel("건수", fontproperties=font_prop)
+
+#x축 눈금 폰트도 직접 지정
+ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop, rotation=0)
+
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+#------------------------전체 발화열월 top5
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+
+fire_type = df.groupBy("발화열원").count().orderBy("count", ascending=False).limit(5).toPandas()
+
+#막대그래프 그리기
+ax = fire_type.plot(kind="bar", x="발화열원", y="count", legend=False)
+
+#폰트 적용
+plt.title("전체 발화열원 Top 5", fontproperties=font_prop)
+plt.xlabel("발화열원", fontproperties=font_prop)
+plt.ylabel("건수", fontproperties=font_prop)
+
+#x축 눈금 폰트도 직접 지정
+ax.set_xticklabels(ax.get_xticklabels(), fontproperties=font_prop, rotation=0)
+
+plt.grid()
+plt.tight_layout()
+plt.show()
+
+#------------------------연도별 총 재산 피해 추이
+from pyspark.sql.functions import sum as _sum
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#재산피해소계를 숫자로 변환 (필요 시)
+df_cleaned = df.withColumn("재산피해소계", df["재산피해소계"].cast("int"))
+
+#연도별 총 재산 피해액 집계
+damage_by_year = df_cleaned.groupBy("연도") \
+    .agg(_sum("재산피해소계").alias("총재산피해")) \
+    .orderBy("연도") \
+    .toPandas()
+
+plt.figure(figsize=(10, 5))
+plt.bar(damage_by_year["연도"], damage_by_year["총재산피해"])
+plt.xlabel("연도", fontproperties=font_prop)
+plt.ylabel("총 재산 피해액 (원)", fontproperties=font_prop)
+plt.title("연도별 총 재산 피해 추이", fontproperties=font_prop)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+#------------------------연도별 3월 재산 피해 추이
+from pyspark.sql.functions import sum as _sum
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+#한글 폰트 설정
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+
+#재산피해소계 정수형 변환
+df_cleaned = df.withColumn("재산피해소계", df["재산피해소계"].cast("int"))
+
+#3월 필터링
+march_df = df_cleaned.filter(df_cleaned["월"] == 3)
+
+#연도별 집계
+march_damage_by_year = march_df.groupBy("연도") \
+    .agg(_sum("재산피해소계").alias("3월총피해")) \
+    .orderBy("연도") \
+    .toPandas()
+
+plt.figure(figsize=(10, 5))
+plt.plot(march_damage_by_year["연도"], march_damage_by_year["3월총피해"], marker='o')
+plt.xlabel("연도", fontproperties=font_prop)
+plt.ylabel("3월 총 재산 피해액 (원)", fontproperties=font_prop)
+plt.title("연도별 3월 재산 피해 추이", fontproperties=font_prop)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+#------------------------3월 재산 피해 구간별 화재 건수
+#3월 데이터 필터링
+march_df = df.filter(df["월"] == 3)
+
+#재산피해구간별 건수 집계
+march_bins = march_df.groupBy("재산피해구간") \
+    .count() \
+    .orderBy("count", ascending=False) \
+    .toPandas()
+
+plt.figure(figsize=(10, 6))
+plt.barh(march_bins["재산피해구간"], march_bins["count"])
+plt.xlabel("건수", fontproperties=font_prop)
+plt.ylabel("재산 피해 구간", fontproperties=font_prop)
+plt.title("3월 재산 피해 구간별 화재 건수", fontproperties=font_prop)
+plt.yticks(fontproperties=font_prop)
+plt.grid()
+plt.tight_layout()
+plt.show()
+
